@@ -13,3 +13,51 @@ const (
 	IF = 1 << 9  // Interrupt Flag - флаг прерываний
 	DF = 1 << 10 // Direction Flag - флаг направления
 )
+
+// updateFlags обновляет флаги на основе результата операции
+func updateFlags(flags Word, result Word, carry bool, overflow bool, auxiliaryCarry bool) Word {
+    // Сброс арифметических флагов
+    flags &^= (CF | PF | AF | ZF | SF | OF)
+
+    // Установка флага переноса
+    if carry {
+        flags |= CF
+    }
+
+    // Установка вспомогательного флага переноса
+    if auxiliaryCarry {
+        flags |= AF
+    }
+
+    // Установка флага переполнения
+    if overflow {
+        flags |= OF
+    }
+
+    // Установка флага нуля
+    if result == 0 {
+        flags |= ZF
+    }
+
+    // Установка флага знака (старший бит)
+    if result&(1<<31) != 0 {
+        flags |= SF
+    }
+
+    // Установка флага четности
+    if parityEven(result) {
+        flags |= PF
+    }
+
+    return flags
+}
+
+// parityEven проверяет четность количества установленных битов
+func parityEven(value Word) bool {
+    count := 0
+    for value != 0 {
+        count++
+        value &= value - 1
+    }
+    return count%2 == 0
+}
