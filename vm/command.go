@@ -1,4 +1,4 @@
-package emu
+package vm
 
 // Command интерфейс представляет исполняемую команду виртуальной машины
 type Command interface {

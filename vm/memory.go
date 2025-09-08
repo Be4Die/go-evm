@@ -1,4 +1,4 @@
-package emu
+package vm
 
 // Memory интерфейс определяет операции работы с памятью виртуальной машины
 type Memory interface {

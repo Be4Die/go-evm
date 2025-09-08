@@ -1,4 +1,4 @@
-package emu
+package vm
 
 // CPU интерфейс определяет основные операции центрального процессора
 type CPU interface {

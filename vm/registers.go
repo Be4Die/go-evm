@@ -1,4 +1,4 @@
-package emu
+package vm
 
 // RegisterType идентифицирует конкретный регистр процессора
 type RegisterType uint8
