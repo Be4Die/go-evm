@@ -1,5 +1,7 @@
 package vm
 
+/* -- Арифметические операции для целочисленных -- */
+
 // операция сложения для целых чисел
 func integerAdd(a, b Word) (Word, bool, bool, bool) {
     result := a + b
@@ -39,4 +41,47 @@ func integerDiv(a, b Word) (Word, bool, bool, bool) {
     result := a / b
     // Для деления AF обычно не определяется, возвращаем false
     return result, false, false, false
+}
+
+
+/* -- Конструкторы арифметических команд для целочисленных -- */
+
+// конструктор команды целочисленного сложения
+func NewIntAddCommand(op1, op2 OperandReader, result OperandWriter) Command {
+    return &binaryCommand{
+        op1:    op1,
+        op2:    op2,
+        result: result,
+        operation: integerAdd,
+    }
+}
+
+// конструктор команды целочисленного вычитания
+func NewIntSubCommand(op1, op2 OperandReader, result OperandWriter) Command {
+    return &binaryCommand{
+        op1:    op1,
+        op2:    op2,
+        result: result,
+        operation: integerSub,
+    }
+}
+
+// конструктор команды целочисленного умножения
+func NewIntMulCommand(op1, op2 OperandReader, result OperandWriter) Command {
+    return &binaryCommand{
+        op1:    op1,
+        op2:    op2,
+        result: result,
+        operation: integerMul,
+    }
+}
+
+// конструктор команды целочисленного деления
+func NewIntDivCommand(op1, op2 OperandReader, result OperandWriter) Command {
+    return &binaryCommand{
+        op1:    op1,
+        op2:    op2,
+        result: result,
+        operation: integerDiv,
+    }
 }
