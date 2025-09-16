@@ -25,10 +25,10 @@ class CPU {
 
 class Memory {
     -data []byte
-    +ReadByte(addr uint16) (byte, error)
-    +WriteByte(addr uint16, value byte) error
-    +ReadWord(addr uint16) (uint32, error)
-    +WriteWord(addr uint16, value uint32) error
+    +ReadByteAt(addr uint16) (byte, error)
+    +WriteByteAt(addr uint16, value byte) error
+    +ReadWordAt(addr uint16) (uint32, error)
+    +WriteWordAt(addr uint16, value uint32) error
 }
 
 class PSW {
