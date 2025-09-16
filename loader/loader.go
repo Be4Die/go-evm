@@ -17,7 +17,7 @@ func NewLoader() *Loader {
 	return &Loader{}
 }
 
-func (l *Loader) LoadProgram(filename string, baseAddr uint16, memory *vm.Memory) (uint16, error) {
+func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return 0, fmt.Errorf("failed to open file: %v", err)
@@ -25,9 +25,9 @@ func (l *Loader) LoadProgram(filename string, baseAddr uint16, memory *vm.Memory
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	currentAddr := baseAddr
+	currentAddr := uint16(0)
 	lineNum := 0
-	startAddr := baseAddr
+	startAddr := uint16(0)
 	codeSection := false
 
 	for scanner.Scan() {
@@ -97,10 +97,10 @@ func (l *Loader) LoadProgram(filename string, baseAddr uint16, memory *vm.Memory
 			continue
 		}
 
-		// If we haven't encountered a START directive yet, assume code starts at baseAddr
+		// If we haven't encountered a START directive yet, assume code starts at 0
 		if !codeSection {
 			codeSection = true
-			currentAddr = baseAddr
+			currentAddr = 0
 		}
 
 		// Parse hex values from line (command)

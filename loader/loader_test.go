@@ -25,7 +25,7 @@ func TestLoader(t *testing.T) {
 	mem := vm.NewMemory(64 * 1024)
 	ldr := NewLoader()
 
-	if err := ldr.LoadProgram(tmpfile.Name(), 0x1000, mem); err != nil {
+	if _, err := ldr.LoadProgram(tmpfile.Name(), mem); err != nil {
 		t.Fatal(err)
 	}
 

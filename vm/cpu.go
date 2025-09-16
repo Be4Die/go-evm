@@ -1,4 +1,3 @@
-// vm/cpu.go
 package vm
 
 import (
@@ -49,16 +48,17 @@ func (c *CPU) Step() error {
 }
 
 func (c *CPU) Run() error {
-    for {
+    for c.psw.ip != 0 {
         if err := c.Step(); err != nil {
             return err
         }
         
-        // Add a safety check to prevent infinite loops
+        // Safety check to prevent infinite loops
         if c.psw.ip > 0xFFFF {
             return errors.New("instruction pointer out of bounds")
         }
     }
+    return nil
 }
 
 func (c *CPU) initCommands() {
