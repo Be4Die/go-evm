@@ -3,12 +3,13 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 )
 
 type CPU struct {
 	memory   *Memory
 	psw      *PSW
-	commands map[uint8]Command
+	commands map[uint8]CommandFunc
 }
 
 func NewCPU(memory *Memory) *CPU {
@@ -30,56 +31,66 @@ func (c *CPU) Step() error {
         return err
     }
 
+    fmt.Printf("Executing opcode %02X at address %04X\n", opcode, c.psw.ip)
+
     command, exists := c.commands[opcode]
     if !exists {
-        return errors.New("unknown opcode")
+        return fmt.Errorf("unknown opcode: %02X at address %04X", opcode, c.psw.ip)
     }
 
     c.psw.ip++ // Increment IP before execution for immediate values
-    if err := command.Execute(); err != nil { // Убрали передачу cpu
+    
+    if err := command(); err != nil {
         return err
     }
+    
+    fmt.Printf("  IP now: %04X, SP: %d\n", c.psw.ip, c.psw.sp)
     return nil
 }
 
 func (c *CPU) Run() error {
-	for {
-		if err := c.Step(); err != nil {
-			return err
-		}
-	}
+    for {
+        if err := c.Step(); err != nil {
+            return err
+        }
+        
+        // Add a safety check to prevent infinite loops
+        if c.psw.ip > 0xFFFF {
+            return errors.New("instruction pointer out of bounds")
+        }
+    }
 }
 
 func (c *CPU) initCommands() {
-	c.commands = make(map[uint8]Command)
+	c.commands = make(map[uint8]CommandFunc)
 	
 	// Register all commands
-	c.commands[OP_MOV] = CommandFunc(c.movCommand)
-	c.commands[OP_ADD_I] = CommandFunc(c.addIntCommand)
-	c.commands[OP_SUB_I] = CommandFunc(c.subIntCommand)
-	c.commands[OP_MUL_I] = CommandFunc(c.mulIntCommand)
-	c.commands[OP_DIV_I] = CommandFunc(c.divIntCommand)
-	c.commands[OP_ADD_F] = CommandFunc(c.addFloatCommand)
-	c.commands[OP_SUB_F] = CommandFunc(c.subFloatCommand)
-	c.commands[OP_MUL_F] = CommandFunc(c.mulFloatCommand)
-	c.commands[OP_DIV_F] = CommandFunc(c.divFloatCommand)
-	c.commands[OP_CMP_I] = CommandFunc(c.cmpIntCommand)
-	c.commands[OP_CMP_F] = CommandFunc(c.cmpFloatCommand)
-	c.commands[OP_JMP] = CommandFunc(c.jmpCommand)
-	c.commands[OP_JZ] = CommandFunc(c.jzCommand)
-	c.commands[OP_JNZ] = CommandFunc(c.jnzCommand)
-	c.commands[OP_JC] = CommandFunc(c.jcCommand)
-	c.commands[OP_JNC] = CommandFunc(c.jncCommand)
-	c.commands[OP_CALL] = CommandFunc(c.callCommand)
-	c.commands[OP_RET] = CommandFunc(c.retCommand)
-	c.commands[OP_PUSH] = CommandFunc(c.pushCommand)
-	c.commands[OP_POP] = CommandFunc(c.popCommand)
-	c.commands[OP_IN] = CommandFunc(c.inCommand)
-	c.commands[OP_OUT] = CommandFunc(c.outCommand)
-	c.commands[OP_AND] = CommandFunc(c.andCommand)
-	c.commands[OP_OR] = CommandFunc(c.orCommand)
-	c.commands[OP_XOR] = CommandFunc(c.xorCommand)
-	c.commands[OP_NOT] = CommandFunc(c.notCommand)
-	c.commands[OP_SHL] = CommandFunc(c.shlCommand)
-	c.commands[OP_SHR] = CommandFunc(c.shrCommand)
+	c.commands[OP_MOV] = c.movCommand
+	c.commands[OP_ADD_I] = c.addIntCommand
+	c.commands[OP_SUB_I] = c.subIntCommand
+	c.commands[OP_MUL_I] = c.mulIntCommand
+	c.commands[OP_DIV_I] = c.divIntCommand
+	c.commands[OP_ADD_F] = c.addFloatCommand
+	c.commands[OP_SUB_F] = c.subFloatCommand
+	c.commands[OP_MUL_F] = c.mulFloatCommand
+	c.commands[OP_DIV_F] = c.divFloatCommand
+	c.commands[OP_CMP_I] = c.cmpIntCommand
+	c.commands[OP_CMP_F] = c.cmpFloatCommand
+	c.commands[OP_JMP] = c.jmpCommand
+	c.commands[OP_JZ] = c.jzCommand
+	c.commands[OP_JNZ] = c.jnzCommand
+	c.commands[OP_JC] = c.jcCommand
+	c.commands[OP_JNC] = c.jncCommand
+	c.commands[OP_CALL] = c.callCommand
+	c.commands[OP_RET] = c.retCommand
+	c.commands[OP_PUSH] = c.pushCommand
+	c.commands[OP_POP] = c.popCommand
+	c.commands[OP_IN] = c.inCommand
+	c.commands[OP_OUT] = c.outCommand
+	c.commands[OP_AND] = c.andCommand
+	c.commands[OP_OR] = c.orCommand
+	c.commands[OP_XOR] = c.xorCommand
+	c.commands[OP_NOT] = c.notCommand
+	c.commands[OP_SHL] = c.shlCommand
+	c.commands[OP_SHR] = c.shrCommand
 }

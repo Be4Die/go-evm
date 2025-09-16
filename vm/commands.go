@@ -7,7 +7,6 @@ import (
 	"math"
 )
 
-// Helper functions for stack operations
 func (c *CPU) push(value uint32) error {
 	if c.psw.sp == 0 {
 		return errors.New("stack overflow")
@@ -31,7 +30,7 @@ func (c *CPU) pop() (uint32, error) {
 }
 
 func (c *CPU) getStackAddress() uint16 {
-	return uint16(32-c.psw.sp-1) * 4 // 32 words of 4 bytes each
+	return uint16(31-c.psw.sp) * 4 // 32 words of 4 bytes each
 }
 
 func (c *CPU) readImmediateOffset() (uint16, error) {
@@ -507,6 +506,12 @@ func (c *CPU) callCommand() error {
 }
 
 func (c *CPU) retCommand() error {
+	// Read and ignore the immediate offset (2 bytes)
+	_, err := c.readImmediateOffset()
+	if err != nil {
+		return err
+	}
+
 	// Pop return address from stack
 	returnAddress, err := c.pop()
 	if err != nil {
@@ -673,6 +678,12 @@ func (c *CPU) xorCommand() error {
 }
 
 func (c *CPU) notCommand() error {
+	// Read and ignore the immediate offset (2 bytes)
+	_, err := c.readImmediateOffset()
+	if err != nil {
+		return err
+	}
+
 	// Pop value from stack
 	stackValue, err := c.pop()
 	if err != nil {

@@ -8,7 +8,9 @@ type PSW struct {
 }
 
 func NewPSW() *PSW {
-	return &PSW{}
+	return &PSW{
+		sp: 31, // Initialize SP to top of stack (31 words)
+	}
 }
 
 func (p *PSW) GetIP() uint16 {
