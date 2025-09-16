@@ -1,0 +1,41 @@
+@startuml Диаграмма классов пакета загрузчика
+
+' Настройки отображения
+skinparam class {
+    BackgroundColor LightGray
+    ArrowColor Black
+    BorderColor DarkGray
+}
+
+' Публичные структуры загрузчика
+class Loader {
+    +LoadProgram(filename string, baseAddr uint16, memory *Memory) error
+    -parseLine(line string) ([]byte, error)
+    -parseHex(hexStr string) (byte, error)
+}
+
+' Вспомогательные классы (приватные)
+class ProgramLine {
+    -address uint16
+    -data []byte
+    +GetAddress() uint16
+    +GetData() []byte
+}
+
+class HexParser {
+    +Parse(hexStr string) (byte, error)
+    -hexToByte(c byte) (byte, error)
+}
+
+' Отношения
+Loader --> ProgramLine : создает
+Loader --> HexParser : использует
+
+note right of Loader::LoadProgram
+    Загружает программу из текстового файла
+    в память по указанному адресу
+    Формат файла: каждая строка содержит
+    6 hex-символов (3 байта команды)
+end note
+
+@enduml

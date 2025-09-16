@@ -1,0 +1,106 @@
+@startuml Диаграмма классов пакета виртуальной машины
+
+' Настройки отображения
+skinparam class {
+    BackgroundColor LightGray
+    ArrowColor Black
+    BorderColor DarkGray
+}
+
+' Интерфейсы (публичные)
+interface Command {
+    +Execute(c CPU) error
+}
+
+' Структуры (публичные)
+class CPU {
+    -memory Memory
+    -psw PSW
+    -commands map[uint8]Command
+    +Step() error
+    +Run() error
+    +GetPSW() PSW
+    +SetPSW(psw PSW)
+}
+
+class Memory {
+    -data []byte
+    +ReadByte(addr uint16) (byte, error)
+    +WriteByte(addr uint16, value byte) error
+    +ReadWord(addr uint16) (uint32, error)
+    +WriteWord(addr uint16, value uint32) error
+}
+
+class PSW {
+    -ip uint16
+    -sp uint8
+    -flags uint16
+    +GetIP() uint16
+    +SetIP(ip uint16)
+    +GetSP() uint8
+    +SetSP(sp uint8)
+    +GetFlags() uint16
+    +SetFlags(flags uint16)
+}
+
+' Абстрактные команды (приватные)
+abstract class arithmeticCommand {
+    {abstract} +Execute(c CPU) error
+}
+
+abstract class branchCommand {
+    {abstract} +Execute(c CPU) error
+}
+
+' Конкретные команды (приватные)
+class movCommand {
+    +Execute(c CPU) error
+}
+
+class addIntCommand {
+    +Execute(c CPU) error
+}
+
+class addFloatCommand {
+    +Execute(c CPU) error
+}
+
+class jmpCommand {
+    +Execute(c CPU) error
+}
+
+class callCommand {
+    +Execute(c CPU) error
+}
+
+class retCommand {
+    +Execute(c CPU) error
+}
+
+class cmpCommand {
+    +Execute(c CPU) error
+}
+
+class ioCommand {
+    +Execute(c CPU) error
+}
+
+' Отношения
+CPU o-- Memory
+CPU o-- PSW
+CPU --> Command : использует
+
+PSW --* CPU
+
+movCommand ..|> Command
+addIntCommand --|> arithmeticCommand
+addFloatCommand --|> arithmeticCommand
+arithmeticCommand ..|> Command
+jmpCommand --|> branchCommand
+branchCommand ..|> Command
+callCommand --|> branchCommand
+retCommand --|> branchCommand
+cmpCommand ..|> Command
+ioCommand ..|> Command
+
+@enduml
