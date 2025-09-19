@@ -3,6 +3,7 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"math"
 )
 
 type CPU struct {
@@ -53,8 +54,7 @@ func (c *CPU) Run() error {
             return err
         }
         
-        // Safety check to prevent infinite loops
-        if c.psw.ip > 0xFFFF {
+        if c.psw.ip > math.MaxUint16-1 {
             return errors.New("instruction pointer out of bounds")
         }
     }
@@ -64,7 +64,6 @@ func (c *CPU) Run() error {
 func (c *CPU) initCommands() {
 	c.commands = make(map[uint8]CommandFunc)
 	
-	// Register all commands
 	c.commands[OP_MOV] = c.movCommand
 	c.commands[OP_ADD_I] = c.addIntCommand
 	c.commands[OP_SUB_I] = c.subIntCommand

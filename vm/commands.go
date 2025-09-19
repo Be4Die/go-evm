@@ -678,27 +678,22 @@ func (c *CPU) xorCommand() error {
 }
 
 func (c *CPU) notCommand() error {
-	// Read and ignore the immediate offset (2 bytes)
-	_, err := c.readImmediateOffset()
-	if err != nil {
-		return err
-	}
+    // Убрано чтение аргументов
+    // Pop value from stack
+    stackValue, err := c.pop()
+    if err != nil {
+        return err
+    }
 
-	// Pop value from stack
-	stackValue, err := c.pop()
-	if err != nil {
-		return err
-	}
+    // Perform NOT operation
+    result := ^stackValue
 
-	// Perform NOT operation
-	result := ^stackValue
+    // Set flags
+    c.psw.SetFlag(FLAG_ZERO, result == 0)
+    c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
 
-	// Set flags
-	c.psw.SetFlag(FLAG_ZERO, result == 0)
-	c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
-
-	// Push result back to stack
-	return c.push(result)
+    // Push result back to stack
+    return c.push(result)
 }
 
 func (c *CPU) shlCommand() error {
