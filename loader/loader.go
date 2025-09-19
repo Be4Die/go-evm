@@ -11,12 +11,19 @@ import (
 	"github.com/Be4Die/go-evm/vm"
 )
 
+// Loader представляет загрузчик программ для виртуальной машины.
+// Отвечает за чтение и парсинг файлов программ, а также загрузку их в память.
 type Loader struct{}
 
+// NewLoader создает и возвращает новый экземпляр Loader.
 func NewLoader() *Loader {
 	return &Loader{}
 }
 
+// LoadProgram загружает программу из файла в память виртуальной машины.
+// filename: путь к файлу программы
+// memory: экземпляр памяти для загрузки программы
+// Возвращает стартовый адрес программы и ошибку в случае неудачи.
 func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -35,12 +42,12 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 		lineNum++
 		line := strings.TrimSpace(scanner.Text())
 		
-		// Skip empty lines and comments
+		// Пропустить пустые строки и комментарии
 		if line == "" || strings.HasPrefix(line, "//") || strings.HasPrefix(line, "#") {
 			continue
 		}
 
-		// Remove any inline comments
+		// Удалить inline-комментарии
 		if commentIndex := strings.Index(line, "//"); commentIndex != -1 {
 			line = strings.TrimSpace(line[:commentIndex])
 		}
@@ -48,7 +55,7 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 			line = strings.TrimSpace(line[:commentIndex])
 		}
 
-		// Parse start address from first line
+		// Парсить стартовый адрес из первой строки
 		if lineNum == 1 {
 			addr, err := strconv.ParseUint(line, 0, 16)
 			if err != nil {
@@ -59,20 +66,20 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 			continue
 		}
 
-		// Check for DS directive (start of data section)
+		// Проверить директиву DS (начало секции данных)
 		if line == "DS" {
 			dataSection = true
 			continue
 		}
 
-		// Check for DE directive (end of data section)
+		// Проверить директиву DE (конец секции данных)
 		if line == "DE" {
 			dataSection = false
 			codeSection = true
 			continue
 		}
 
-		// Process data section
+		// Обработать секцию данных
 		if dataSection {
 			parts := strings.Fields(line)
 			if len(parts) < 2 {
@@ -87,7 +94,7 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 			}
 
 			var value uint32
-			// Try to parse as float first
+			// Попытаться парсить как float сначала
 			if strings.Contains(valueStr, ".") {
 				floatVal, err := strconv.ParseFloat(valueStr, 32)
 				if err != nil {
@@ -95,7 +102,7 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 				}
 				value = math.Float32bits(float32(floatVal))
 			} else {
-				// Parse as integer
+				// Парсить как integer
 				intVal, err := strconv.ParseUint(valueStr, 0, 32)
 				if err != nil {
 					return 0, fmt.Errorf("invalid integer value at line %d: %v", lineNum, err)
@@ -109,7 +116,7 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 			continue
 		}
 
-		// Process code section
+		// Обработать секцию кода
 		if codeSection {
 			bytes, err := l.parseHexLine(line)
 			if err != nil {
@@ -120,7 +127,7 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 				return 0, fmt.Errorf("invalid command length at line %d: expected 3 bytes, got %d", lineNum, len(bytes))
 			}
 
-			// Write bytes to memory
+			// Записать байты в память
 			for i, b := range bytes {
 				addr := currentAddr + uint16(i)
 				if err := memory.WriteByteAt(addr, b); err != nil {
@@ -139,8 +146,11 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 	return startAddr, nil
 }
 
+// parseHexLine парсит строку с шестнадцатеричными значениями в массив байт.
+// line: строка с шестнадцатеричными значениями (6 символов)
+// Возвращает массив из 3 байт или ошибку в случае невалидных данных.
 func (l *Loader) parseHexLine(line string) ([]byte, error) {
-	// Remove all whitespace and convert to uppercase
+	// Удалить все пробелы и преобразовать в верхний регистр
 	line = strings.ReplaceAll(line, " ", "")
 	line = strings.ToUpper(line)
 	

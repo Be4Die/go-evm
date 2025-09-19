@@ -5,7 +5,6 @@ import "testing"
 func TestMemoryReadWrite(t *testing.T) {
     mem := NewMemory(1024)
     
-    // Test byte operations
     testAddr := uint16(0x10)
     testValue := byte(0xAB)
     err := mem.WriteByteAt(testAddr, testValue)
@@ -21,7 +20,6 @@ func TestMemoryReadWrite(t *testing.T) {
         t.Errorf("Expected %02x, got %02x", testValue, val)
     }
 
-    // Test word operations
     testWord := uint32(0x12345678)
     err = mem.WriteWordAt(testAddr, testWord)
     if err != nil {
@@ -40,7 +38,6 @@ func TestMemoryReadWrite(t *testing.T) {
 func TestMemoryBounds(t *testing.T) {
     mem := NewMemory(100)
     
-    // Test out of bounds
     err := mem.WriteByteAt(100, 0xFF)
     if err == nil {
         t.Error("Expected error for out of bounds write")

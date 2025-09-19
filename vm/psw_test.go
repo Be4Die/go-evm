@@ -5,7 +5,6 @@ import "testing"
 func TestPSWFlags(t *testing.T) {
     psw := NewPSW()
     
-    // Test setting and getting flags
     psw.SetFlag(FLAG_ZERO, true)
     if !psw.GetFlag(FLAG_ZERO) {
         t.Error("Zero flag not set correctly")
