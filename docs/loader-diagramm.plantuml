@@ -14,22 +14,6 @@ class Loader {
     -parseHex(hexStr string) (byte, error)
 }
 
-' Вспомогательные классы (приватные)
-class ProgramLine {
-    -address uint16
-    -data []byte
-    +GetAddress() uint16
-    +GetData() []byte
-}
-
-class HexParser {
-    +Parse(hexStr string) (byte, error)
-    -hexToByte(c byte) (byte, error)
-}
-
-' Отношения
-Loader --> ProgramLine : создает
-Loader --> HexParser : использует
 
 note right of Loader::LoadProgram
     Загружает программу из текстового файла

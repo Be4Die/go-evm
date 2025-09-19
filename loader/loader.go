@@ -28,6 +28,7 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 	currentAddr := uint16(0)
 	lineNum := 0
 	startAddr := uint16(0)
+	dataSection := false
 	codeSection := false
 
 	for scanner.Scan() {
@@ -47,31 +48,42 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 			line = strings.TrimSpace(line[:commentIndex])
 		}
 
-		// Check for START directive
-		if strings.HasPrefix(line, "START:") {
-			addrStr := strings.TrimSpace(line[len("START:"):])
-			addr, err := strconv.ParseUint(addrStr, 0, 16)
+		// Parse start address from first line
+		if lineNum == 1 {
+			addr, err := strconv.ParseUint(line, 0, 16)
 			if err != nil {
 				return 0, fmt.Errorf("invalid start address: %v", err)
 			}
 			startAddr = uint16(addr)
 			currentAddr = startAddr
+			continue
+		}
+
+		// Check for DS directive (start of data section)
+		if line == "DS" {
+			dataSection = true
+			continue
+		}
+
+		// Check for DE directive (end of data section)
+		if line == "DE" {
+			dataSection = false
 			codeSection = true
 			continue
 		}
 
-		// Check for DATA directive
-		if strings.HasPrefix(line, "DATA:") {
-			parts := strings.Fields(line[len("DATA:"):])
+		// Process data section
+		if dataSection {
+			parts := strings.Fields(line)
 			if len(parts) < 2 {
-				return 0, fmt.Errorf("invalid DATA directive at line %d", lineNum)
+				return 0, fmt.Errorf("invalid data at line %d", lineNum)
 			}
 			addrStr := parts[0]
 			valueStr := parts[1]
 
 			addr, err := strconv.ParseUint(addrStr, 0, 16)
 			if err != nil {
-				return 0, fmt.Errorf("invalid address in DATA directive at line %d: %v", lineNum, err)
+				return 0, fmt.Errorf("invalid address at line %d: %v", lineNum, err)
 			}
 
 			var value uint32
@@ -79,14 +91,14 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 			if strings.Contains(valueStr, ".") {
 				floatVal, err := strconv.ParseFloat(valueStr, 32)
 				if err != nil {
-					return 0, fmt.Errorf("invalid float value in DATA directive at line %d: %v", lineNum, err)
+					return 0, fmt.Errorf("invalid float value at line %d: %v", lineNum, err)
 				}
 				value = math.Float32bits(float32(floatVal))
 			} else {
 				// Parse as integer
 				intVal, err := strconv.ParseUint(valueStr, 0, 32)
 				if err != nil {
-					return 0, fmt.Errorf("invalid integer value in DATA directive at line %d: %v", lineNum, err)
+					return 0, fmt.Errorf("invalid integer value at line %d: %v", lineNum, err)
 				}
 				value = uint32(intVal)
 			}
@@ -97,30 +109,26 @@ func (l *Loader) LoadProgram(filename string, memory *vm.Memory) (uint16, error)
 			continue
 		}
 
-		// If we haven't encountered a START directive yet, assume code starts at 0
-		if !codeSection {
-			codeSection = true
-			currentAddr = 0
-		}
-
-		// Parse hex values from line (command)
-		bytes, err := l.parseHexLine(line)
-		if err != nil {
-			return 0, fmt.Errorf("parse error at line %d: %v", lineNum, err)
-		}
-
-		if len(bytes) != 3 {
-			return 0, fmt.Errorf("invalid command length at line %d: expected 3 bytes, got %d", lineNum, len(bytes))
-		}
-
-		// Write bytes to memory
-		for i, b := range bytes {
-			addr := currentAddr + uint16(i)
-			if err := memory.WriteByteAt(addr, b); err != nil {
-				return 0, fmt.Errorf("memory write error at address %04X: %v", addr, err)
+		// Process code section
+		if codeSection {
+			bytes, err := l.parseHexLine(line)
+			if err != nil {
+				return 0, fmt.Errorf("parse error at line %d: %v", lineNum, err)
 			}
+
+			if len(bytes) != 3 {
+				return 0, fmt.Errorf("invalid command length at line %d: expected 3 bytes, got %d", lineNum, len(bytes))
+			}
+
+			// Write bytes to memory
+			for i, b := range bytes {
+				addr := currentAddr + uint16(i)
+				if err := memory.WriteByteAt(addr, b); err != nil {
+					return 0, fmt.Errorf("memory write error at address %04X: %v", addr, err)
+				}
+			}
+			currentAddr += 3
 		}
-		currentAddr += 3
 	}
 
 	if err := scanner.Err(); err != nil {
