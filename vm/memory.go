@@ -1,15 +1,18 @@
-// vm/memory.go
 package vm
 
 import (
 	"errors"
 )
 
+// Memory представляет виртуальную память машины.
+// Содержит байтовый массив для хранения данных и размер памяти.
 type Memory struct {
-	data []byte
-	size uint32
+	data []byte  // байтовый массив для хранения данных памяти
+	size uint32  // общий размер памяти в байтах
 }
 
+// NewMemory создает и возвращает новый экземпляр Memory заданного размера.
+// size: размер памяти в байтах
 func NewMemory(size uint32) *Memory {
 	return &Memory{
 		data: make([]byte, size),
@@ -17,6 +20,9 @@ func NewMemory(size uint32) *Memory {
 	}
 }
 
+// ReadByteAt читает байт из памяти по указанному адресу.
+// addr: 16-битный адрес для чтения
+// Возвращает прочитанный байт или ошибку, если адрес вне диапазона.
 func (m *Memory) ReadByteAt(addr uint16) (byte, error) {
 	address := uint32(addr)
 	if address >= m.size {
@@ -25,6 +31,10 @@ func (m *Memory) ReadByteAt(addr uint16) (byte, error) {
 	return m.data[address], nil
 }
 
+// WriteByteAt записывает байт в память по указанному адресу.
+// addr: 16-битный адрес для записи
+// value: байт для записи
+// Возвращает ошибку, если адрес вне диапазона.
 func (m *Memory) WriteByteAt(addr uint16, value byte) error {
 	address := uint32(addr)
 	if address >= m.size {
@@ -34,6 +44,10 @@ func (m *Memory) WriteByteAt(addr uint16, value byte) error {
 	return nil
 }
 
+// ReadWordAt читает 32-битное слово из памяти по указанному адресу.
+// Собирает слово из 4 последовательных байтов (little-endian).
+// addr: 16-битный адрес для чтения (указывает на первый байт слова)
+// Возвращает прочитанное слово или ошибку, если адрес вне диапазона.
 func (m *Memory) ReadWordAt(addr uint16) (uint32, error) {
 	address := uint32(addr)
 	if address+3 >= m.size {
@@ -45,6 +59,11 @@ func (m *Memory) ReadWordAt(addr uint16) (uint32, error) {
 		uint32(m.data[address+3])<<24, nil
 }
 
+// WriteWordAt записывает 32-битное слово в память по указанному адресу.
+// Разбивает слово на 4 последовательных байта (little-endian).
+// addr: 16-битный адрес для записи (указывает на первый байт слова)
+// value: 32-битное слово для записи
+// Возвращает ошибку, если адрес вне диапазона.
 func (m *Memory) WriteWordAt(addr uint16, value uint32) error {
 	address := uint32(addr)
 	if address+3 >= m.size {

@@ -6,12 +6,16 @@ import (
 	"math"
 )
 
+// CPU представляет центральный процессор виртуальной машины.
+// Обрабатывает выполнение инструкций, управление памятью и регистрами состояния.
 type CPU struct {
-	memory   *Memory
-	psw      *PSW
-	commands map[uint8]CommandFunc
+	memory   *Memory               // Память виртуальной машины
+	psw      *PSW                  // Слово состояния процессора
+	commands map[uint8]CommandFunc // Карта опкодов и соответствующих функций команд
 }
 
+// NewCPU создает и возвращает новый экземпляр CPU.
+// memory: экземпляр памяти для работы процессора
 func NewCPU(memory *Memory) *CPU {
 	cpu := &CPU{
 		memory: memory,
@@ -21,46 +25,51 @@ func NewCPU(memory *Memory) *CPU {
 	return cpu
 }
 
+// GetPSW возвращает текущее слово состояния процессора (PSW).
 func (c *CPU) GetPSW() *PSW {
 	return c.psw
 }
 
+// Step выполняет одну инструкцию по текущему адресу IP.
+// Возвращает ошибку в случае неизвестного опкода или проблем с памятью.
 func (c *CPU) Step() error {
-    opcode, err := c.memory.ReadByteAt(c.psw.ip)
-    if err != nil {
-        return err
-    }
+	opcode, err := c.memory.ReadByteAt(c.psw.ip)
+	if err != nil {
+		return err
+	}
 
-    fmt.Printf("Executing opcode %02X at address %04X\n", opcode, c.psw.ip)
+	command, exists := c.commands[opcode]
+	if !exists {
+		return fmt.Errorf("unknown opcode: %02X at address %04X", opcode, c.psw.ip)
+	}
 
-    command, exists := c.commands[opcode]
-    if !exists {
-        return fmt.Errorf("unknown opcode: %02X at address %04X", opcode, c.psw.ip)
-    }
-
-    c.psw.ip++ // Increment IP before execution for immediate values
-    
-    if err := command(); err != nil {
-        return err
-    }
-    
-    fmt.Printf("  IP now: %04X, SP: %d\n", c.psw.ip, c.psw.sp)
-    return nil
+	c.psw.ip++
+	
+	if err := command(); err != nil {
+		return err
+	}
+	
+	fmt.Printf("  IP now: %04X, SP: %d\n", c.psw.ip, c.psw.sp)
+	return nil
 }
 
+// Run выполняет инструкции до тех пор, пока IP не станет равным 0.
+// Возвращает ошибку в случае выхода IP за границы памяти или ошибки выполнения инструкции.
 func (c *CPU) Run() error {
-    for c.psw.ip != 0 {
-        if err := c.Step(); err != nil {
-            return err
-        }
-        
-        if c.psw.ip > math.MaxUint16-1 {
-            return errors.New("instruction pointer out of bounds")
-        }
-    }
-    return nil
+	for c.psw.ip != 0 {
+		if err := c.Step(); err != nil {
+			return err
+		}
+		
+		if c.psw.ip > math.MaxUint16-1 {
+			return errors.New("instruction pointer out of bounds")
+		}
+	}
+	return nil
 }
 
+// initCommands инициализирует карту команд процессора.
+// Сопоставляет опкоды с соответствующими функциями-обработчиками.
 func (c *CPU) initCommands() {
 	c.commands = make(map[uint8]CommandFunc)
 	

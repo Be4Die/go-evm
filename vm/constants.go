@@ -1,43 +1,79 @@
-// vm/constants.go
 package vm
 
+// Опкоды инструкций виртуальной машины
 const (
-	// Opcodes
+
+	// OP_MOV - инструкция перемещения данных
 	OP_MOV   = 0x01
+	// OP_ADD_I - целочисленное сложение
 	OP_ADD_I = 0x02
+	// OP_SUB_I - целочисленное вычитание
 	OP_SUB_I = 0x03
+	// OP_MUL_I - целочисленное умножение
 	OP_MUL_I = 0x04
+	// OP_DIV_I - целочисленное деление
 	OP_DIV_I = 0x05
+	// OP_ADD_F - сложение чисел с плавающей точкой
 	OP_ADD_F = 0x06
+	// OP_SUB_F - вычитание чисел с плавающей точкой
 	OP_SUB_F = 0x07
+	// OP_MUL_F - умножение чисел с плавающей точкой
 	OP_MUL_F = 0x08
+	// OP_DIV_F - деление чисел с плавающей точкой
 	OP_DIV_F = 0x09
+	// OP_CMP_I - целочисленное сравнение
 	OP_CMP_I = 0x0A
+	// OP_CMP_F - сравнение чисел с плавающей точкой
 	OP_CMP_F = 0x0B
+	// OP_JMP - безусловный переход
 	OP_JMP   = 0x0C
+	// OP_JZ - переход если равенство (zero flag)
 	OP_JZ    = 0x0D
+	// OP_JNZ - переход если не равенство (not zero flag)
 	OP_JNZ   = 0x0E
+	// OP_JC - переход если установлен флаг переноса (carry flag)
 	OP_JC    = 0x0F
+	// OP_JNC - переход если не установлен флаг переноса (not carry flag)
 	OP_JNC   = 0x10
+	// OP_CALL - вызов подпрограммы
 	OP_CALL  = 0x11
+	// OP_RET - возврат из подпрограммы
 	OP_RET   = 0x12
+	// OP_PUSH - помещение значения в стек
 	OP_PUSH  = 0x13
+	// OP_POP - извлечение значения из стека
 	OP_POP   = 0x14
+	// OP_IN - ввод данных
 	OP_IN    = 0x15
+	// OP_OUT - вывод данных
 	OP_OUT   = 0x16
+	// OP_AND - логическое И
 	OP_AND   = 0x17
+	// OP_OR - логическое ИЛИ
 	OP_OR    = 0x18
+	// OP_XOR - исключающее ИЛИ
 	OP_XOR   = 0x19
+	// OP_NOT - логическое НЕ
 	OP_NOT   = 0x1A
+	// OP_SHL - логический сдвиг влево
 	OP_SHL   = 0x1B
+	// OP_SHR - логический сдвиг вправо
 	OP_SHR   = 0x1C
 
-	// Flag bits
-	FLAG_ZERO      = 0  // Zero flag
-	FLAG_CARRY     = 1  // Carry flag
-	FLAG_OVERFLOW  = 2  // Overflow flag
-	FLAG_NEGATIVE  = 3  // Negative flag
-	FLAG_FZERO     = 4  // Float zero flag
-	FLAG_FOVERFLOW = 5  // Float overflow flag
-	FLAG_FNEGATIVE = 6  // Float negative flag
+	// Биты флагов в регистре флагов PSW
+
+	// FLAG_ZERO - флаг нуля (устанавливается когда результат операции равен нулю)
+	FLAG_ZERO      = 0
+	// FLAG_CARRY - флаг переноса (устанавливается при переносе или заёме)
+	FLAG_CARRY     = 1
+	// FLAG_OVERFLOW - флаг переполнения для целочисленных операций
+	FLAG_OVERFLOW  = 2
+	// FLAG_NEGATIVE - флаг отрицательного результата для целочисленных операций
+	FLAG_NEGATIVE  = 3
+	// FLAG_FZERO - флаг нуля для операций с плавающей точкой
+	FLAG_FZERO     = 4
+	// FLAG_FOVERFLOW - флаг переполнения для операций с плавающей точкой
+	FLAG_FOVERFLOW = 5
+	// FLAG_FNEGATIVE - флаг отрицательного результата для операций с плавающей точкой
+	FLAG_FNEGATIVE = 6
 )
