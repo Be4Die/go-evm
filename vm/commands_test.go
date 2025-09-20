@@ -702,3 +702,35 @@ func TestShrCommand(t *testing.T) {
 		t.Errorf("Expected 0x0F000000, got 0x%08X", result)
 	}
 }
+
+func TestAddIntCommandWithOverflow(t *testing.T) {
+    mem := NewMemory(1024)
+    cpu := NewCPU(mem)
+    cpu.psw.SetSP(31)
+
+    mem.WriteWordAt(0x200, math.MaxUint32)
+    cpu.push(1)
+    cpu.psw.SetIP(0x100)
+    mem.WriteByteAt(0x100, OP_ADD_I)
+    mem.WriteByteAt(0x101, 0x00)
+    mem.WriteByteAt(0x102, 0x02)
+
+    err := cpu.Step()
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    result, err := cpu.pop()
+    if err != nil {
+        t.Fatal(err)
+    }
+    if result != 0 {
+        t.Errorf("Expected 0, got %d", result)
+    }
+    if !cpu.psw.GetFlag(FLAG_CARRY) {
+        t.Error("Carry flag should be set")
+    }
+    if cpu.psw.GetFlag(FLAG_OVERFLOW) {
+        t.Error("Overflow flag should not be set")
+    }
+}
