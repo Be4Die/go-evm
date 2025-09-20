@@ -73,23 +73,6 @@ func (t *Translator) processDW(line string, lineNum int) error {
 	return nil
 }
 
-func (t *Translator) processORG(line string, lineNum int) error {
-	addrStr := strings.TrimSpace(line[4:])
-	addr, err := t.parseConstant(addrStr)
-	if err != nil {
-		return fmt.Errorf("invalid address '%s' at line %d: %v", addrStr, lineNum, err)
-	}
-	
-	if t.pass == 1 {
-		t.currentAddress = addr
-		if t.startAddress == 0 {
-			t.startAddress = addr
-		}
-	}
-	
-	return nil
-}
-
 func (t *Translator) processEQU(line string, lineNum int) error {
 	parts := strings.Fields(line)
 	if len(parts) < 3 {

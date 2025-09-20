@@ -1,7 +1,13 @@
 ; Вычисление факториала
-ORG 0x0200
+entry main
 
-START:
+section .data
+N:      DW 5
+RESULT: DW 1
+ONE:    DW 1
+
+section .code
+main:
     PUSH [N]        ; Загружаем n в стек
     CMP_I [ONE]     ; Сравниваем с 1
     JZ EXIT         ; Если равно 1, выходим
@@ -12,15 +18,8 @@ START:
     PUSH [N]        ; Загружаем n
     SUB_I [ONE]     ; Вычитаем 1
     POP [N]         ; Сохраняем новое n
-    JMP START       ; Повторяем цикл
+    JMP main        ; Повторяем цикл
 
 EXIT:
     OUT [RESULT]    ; Выводим результат
     HALT            ; Останавливаем программу
-
-; Секция данных
-DS
-N:      DW 5
-RESULT: DW 1
-ONE:    DW 1
-DE

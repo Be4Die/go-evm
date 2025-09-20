@@ -16,6 +16,7 @@ type Translator struct {
 	startAddress   uint32
 	pass           int
 	dataAddress    uint32
+	entryLabel     string
 }
 
 type instruction struct {
@@ -42,6 +43,7 @@ func NewTranslator() *Translator {
 		instructions: make([]instruction, 0),
 		data:         make([]dataItem, 0),
 		dataAddress:  0x0100, // Данные начинаются с 0x0100
+		entryLabel:   "",
 	}
 }
 
@@ -77,15 +79,22 @@ func (t *Translator) writeOutput(filename string) error {
 	writer := bufio.NewWriter(file)
 	
 	// Запись стартового адреса
+	if t.entryLabel != "" {
+		if addr, exists := t.symbolTable[t.entryLabel]; exists {
+			t.startAddress = addr
+		} else {
+			return fmt.Errorf("entry label %s not found", t.entryLabel)
+		}
+	}
 	fmt.Fprintf(writer, "0x%04X\n", t.startAddress)
 	
 	// Запись секции данных
 	fmt.Fprintln(writer, "DS")
 	for _, item := range t.data {
 		if item.isByte {
-		    fmt.Fprintf(writer, "0x%04X %d\n", item.address, item.value)
+			fmt.Fprintf(writer, "0x%04X %d\n", item.address, item.value)
 		} else {
-		    fmt.Fprintf(writer, "0x%04X %d\n", item.address, item.value)
+			fmt.Fprintf(writer, "0x%04X %d\n", item.address, item.value)
 		}
 	}
 	fmt.Fprintln(writer, "DE")

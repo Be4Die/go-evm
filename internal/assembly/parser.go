@@ -16,7 +16,7 @@ func (t *Translator) processFile(filename string) error {
 
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
-	inDataSection := false
+	currentSection := "" // "data" или "code"
 
 	for scanner.Scan() {
 		lineNum++
@@ -30,21 +30,36 @@ func (t *Translator) processFile(filename string) error {
 		// Удаление inline-комментариев
 		line = removeComments(line)
 
-		// Обработка директив секций
-		if strings.ToUpper(line) == "DS" {
-			inDataSection = true
-			t.currentAddress = t.dataAddress // Переключаемся на адрес данных
+		// Обработка директивы entry
+		if strings.HasPrefix(strings.ToUpper(line), "ENTRY ") {
+			parts := strings.Fields(line)
+			if len(parts) < 2 {
+				return fmt.Errorf("invalid entry directive at line %d", lineNum)
+			}
+			if t.pass == 1 {
+				t.entryLabel = parts[1]
+			}
 			continue
 		}
 
-		if strings.ToUpper(line) == "DE" {
-			inDataSection = false
-			t.currentAddress = 0x0200 // Возвращаемся к адресу кода
+		// Обработка директив секций
+		if strings.HasPrefix(strings.ToUpper(line), "SECTION ") {
+			section := strings.TrimSpace(line[8:])
+			switch section {
+			case ".data":
+				currentSection = "data"
+				t.currentAddress = t.dataAddress
+			case ".code":
+				currentSection = "code"
+				t.currentAddress = 0x0200
+			default:
+				return fmt.Errorf("unknown section: %s at line %d", section, lineNum)
+			}
 			continue
 		}
 
 		// Обработка секции данных
-		if inDataSection {
+		if currentSection == "data" {
 			if err := t.processDataLine(line, lineNum); err != nil {
 				return err
 			}
@@ -52,9 +67,14 @@ func (t *Translator) processFile(filename string) error {
 		}
 
 		// Обработка секции кода
-		if err := t.processCodeLine(line, lineNum); err != nil {
-			return err
+		if currentSection == "code" {
+			if err := t.processCodeLine(line, lineNum); err != nil {
+				return err
+			}
+			continue
 		}
+
+		return fmt.Errorf("line %d is not in any section", lineNum)
 	}
 
 	return scanner.Err()
@@ -74,11 +94,6 @@ func (t *Translator) processCodeLine(line string, lineNum int) error {
 		if line == "" {
 			return nil // Только метка без инструкции
 		}
-	}
-
-	// Обработка директивы ORG
-	if strings.HasPrefix(strings.ToUpper(line), "ORG ") {
-		return t.processORG(line, lineNum)
 	}
 
 	// Обработка директивы EQU
