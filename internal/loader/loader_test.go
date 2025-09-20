@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Be4Die/go-evm/vm"
+	"github.com/Be4Die/go-evm/internal/vm"
 )
 
 func TestLoader(t *testing.T) {

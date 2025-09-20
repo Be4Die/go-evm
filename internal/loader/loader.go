@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Be4Die/go-evm/vm"
+	"github.com/Be4Die/go-evm/internal/vm"
 )
 
 // Loader представляет загрузчик программ для виртуальной машины.

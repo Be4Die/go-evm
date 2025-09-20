@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Be4Die/go-evm/loader"
-	"github.com/Be4Die/go-evm/vm"
+	"github.com/Be4Die/go-evm/internal/loader"
+	"github.com/Be4Die/go-evm/internal/vm"
 )
 
 func main() {
