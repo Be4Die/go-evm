@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/Be4Die/go-evm/internal/translator"
+	"github.com/Be4Die/go-evm/internal/assembly"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	inputFile := os.Args[1]
 	outputFile := os.Args[2]
 
-	translator := translator.NewTranslator()
+	translator := assembly.NewTranslator()
 	if err := translator.Assemble(inputFile, outputFile); err != nil {
 		log.Fatalf("Assembly failed: %v", err)
 	}
