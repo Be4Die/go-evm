@@ -101,8 +101,12 @@ func (t *Translator) processCodeLine(line string, lineNum int) error {
 	}
 
 	// Обработка директивы EQU
-	if strings.HasPrefix(strings.ToUpper(line), "EQU ") {
-		return t.processEQU(line, lineNum)
+	words := strings.Fields(line)
+	if len(words) >= 3 && strings.ToUpper(words[1]) == "EQU" {
+	    return t.processEQU(line, lineNum)
+	} else if len(words) >= 2 && strings.ToUpper(words[0]) == "EQU" {
+	    // Это для случая, когда нет имени константы, только "EQU value"
+	    return fmt.Errorf("invalid EQU directive at line %d: missing constant name", lineNum)
 	}
 
 	// Обработка инструкций
