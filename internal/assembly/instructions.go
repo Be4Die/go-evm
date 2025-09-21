@@ -23,7 +23,7 @@ func (t *Translator) processInstruction(line string, lineNum int) error {
 		operandStr = strings.Join(parts[1:], " ")
 	}
 	
-	// Обработка псевдоинструкций
+	// Обработка псевдо-инструкций
 	if mnemonic == "HALT" {
 		mnemonic = "JMP"
 		operandStr = "0x0000"
