@@ -1,3 +1,4 @@
+// symbols.go
 package assembly
 
 import (
@@ -6,6 +7,9 @@ import (
 	"strings"
 )
 
+// parseConstant преобразует строковое представление константы в числовое значение
+// Поддерживает шестнадцатеричные (0x), двоичные (0b) и десятичные форматы
+// Выполняет поиск в таблицах символов и констант
 func (t *Translator) parseConstant(constStr string) (uint32, error) {
 	constStr = strings.TrimSpace(constStr)
 	

@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// processFile обрабатывает файл ассемблера, выполняя парсинг строк и директив
+// Производит разбор секций, меток, инструкций и директив в два прохода
 func (t *Translator) processFile(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -80,6 +82,8 @@ func (t *Translator) processFile(filename string) error {
 	return scanner.Err()
 }
 
+// processCodeLine обрабатывает строку кода, содержащую инструкции или метки
+// Выполняет разбор меток, директив EQU и инструкций
 func (t *Translator) processCodeLine(line string, lineNum int) error {
 	// Обработка меток
 	parts := strings.SplitN(line, ":", 2)
@@ -105,7 +109,8 @@ func (t *Translator) processCodeLine(line string, lineNum int) error {
 	return t.processInstruction(line, lineNum)
 }
 
-// removeComments удаляет комментарии из строки
+// removeComments удаляет комментарии из строки ассемблера
+// Поддерживает комментарии начинающиеся с ; и //
 func removeComments(line string) string {
 	if commentIndex := strings.Index(line, ";"); commentIndex != -1 {
 		line = strings.TrimSpace(line[:commentIndex])

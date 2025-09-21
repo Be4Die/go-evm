@@ -1,3 +1,4 @@
+// instructions.go
 package assembly
 
 import (
@@ -7,6 +8,8 @@ import (
 	"github.com/Be4Die/go-evm/internal/vm"
 )
 
+// processInstruction обрабатывает инструкцию ассемблера
+// Выполняет трансляцию мнемоники в опкод и разбор операндов
 func (t *Translator) processInstruction(line string, lineNum int) error {
 	// Разбор инструкции и операндов
 	parts := strings.Fields(line)
@@ -66,6 +69,8 @@ func (t *Translator) processInstruction(line string, lineNum int) error {
 	return nil
 }
 
+// parseOperand преобразует строковое представление операнда в числовое значение
+// Поддерживает прямую и косвенную адресацию
 func (t *Translator) parseOperand(operandStr string) (uint32, error) {
 	if operandStr == "" {
 		return 0, nil
@@ -81,6 +86,8 @@ func (t *Translator) parseOperand(operandStr string) (uint32, error) {
 	return t.parseConstant(operandStr)
 }
 
+// getOpcode возвращает числовой код операции для мнемоники инструкции
+// Использует таблицу опкодов виртуальной машины
 func (t *Translator) getOpcode(mnemonic string) (int, error) {
 	opcodes := map[string]int{
 		"MOV":   vm.OP_MOV,

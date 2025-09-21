@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+// processDataLine обрабатывает строку в секции данных
+// Выполняет разбор меток и директив определения данных
 func (t *Translator) processDataLine(line string, lineNum int) error {
 	// Обработка меток в данных
 	parts := strings.SplitN(line, ":", 2)
@@ -27,6 +29,8 @@ func (t *Translator) processDataLine(line string, lineNum int) error {
 	return fmt.Errorf("invalid data directive at line %d", lineNum)
 }
 
+// processDB обрабатывает директиву DB (Define Byte)
+// Инициализирует байтовые значения в памяти данных
 func (t *Translator) processDB(line string, lineNum int) error {
 	// Извлечение значений после DB
 	valuesStr := strings.TrimSpace(line[3:])
@@ -50,6 +54,8 @@ func (t *Translator) processDB(line string, lineNum int) error {
 	return nil
 }
 
+// processDW обрабатывает директиву DW (Define Word)
+// Инициализирует словные значения (4 байта) в памяти данных
 func (t *Translator) processDW(line string, lineNum int) error {
 	// Извлечение значений после DW
 	valuesStr := strings.TrimSpace(line[3:])
@@ -73,6 +79,8 @@ func (t *Translator) processDW(line string, lineNum int) error {
 	return nil
 }
 
+// processEQU обрабатывает директиву EQU (Equate)
+// Создает символические константы для использования в коде
 func (t *Translator) processEQU(line string, lineNum int) error {
 	parts := strings.Fields(line)
 	if len(parts) < 3 {
