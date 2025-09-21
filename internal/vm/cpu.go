@@ -49,7 +49,6 @@ func (c *CPU) Step() error {
 		return err
 	}
 	
-	fmt.Printf("  IP now: %04X, SP: %d\n", c.psw.ip, c.psw.sp)
 	return nil
 }
 
