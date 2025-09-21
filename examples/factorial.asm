@@ -1,25 +1,46 @@
-; Вычисление факториала
+; Вычисление факториала с вводом числа
 entry main
 
 section .data
-N:      DW 5
-RESULT: DW 1
-ONE:    DW 1
+N:       DW 0
+RESULT:  DW 1
+ONE:     DW 1
+ZERO:    DW 0
 
 section .code
-main:
-    PUSH [N]        ; Загружаем n в стек
-    CMP_I [ONE]     ; Сравниваем с 1
-    JZ EXIT         ; Если равно 1, выходим
-    JNC EXIT        ; Если меньше 1, выходим
-    PUSH [RESULT]   ; Загружаем текущий результат
-    MUL_I [N]       ; Умножаем на n
-    POP [RESULT]    ; Сохраняем результат
-    PUSH [N]        ; Загружаем n
-    SUB_I [ONE]     ; Вычитаем 1
-    POP [N]         ; Сохраняем новое n
-    JMP main        ; Повторяем цикл
+main:    
+    ; Ввод числа
+    IN [N]
+    
+    ; Проверка на отрицательность
+    PUSH [N]
+    CMP_I [ZERO]
+    JC POSITIVE      ; Если N >= 0, продолжаем
+    JMP ERROR        ; Если отрицательное - ошибка
+
+POSITIVE:
+    ; Проверка на ноль
+    PUSH [N]
+    CMP_I [ZERO]
+    JZ EXIT          ; Если ноль, результат = 1
+
+    ; Основной цикл вычисления факториала
+LOOP:
+    PUSH [RESULT]
+    MUL_I [N]        ; Умножаем текущий результат на N
+    POP [RESULT]
+    PUSH [N]
+    SUB_I [ONE]      ; Уменьшаем N на 1
+    POP [N]
+    PUSH [N]
+    CMP_I [ZERO]     ; Проверяем, достигли ли нуля
+    JNZ LOOP         ; Если нет, продолжаем цикл
+    JMP EXIT
+
+ERROR:
+    PUSH [ZERO]
+    POP [RESULT]
 
 EXIT:
-    OUT [RESULT]    ; Выводим результат
-    HALT            ; Останавливаем программу
+    OUT [RESULT]     ; Вывод результата
+    HALT             ; Остановка программы
