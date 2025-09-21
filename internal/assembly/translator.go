@@ -5,6 +5,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // Translator представляет основной транслятор ассемблерного кода в машинный
@@ -53,7 +55,7 @@ func NewTranslator() *Translator {
 
 // Assemble выполняет двухпроходную трансляцию ассемблерного кода в бинарный формат
 // inputFile - путь к исходному файлу, outputFile - путь для выходного файла
-func (t *Translator) Assemble(inputFile, outputFile string) error {
+func (t *Translator) Assemble(inputFile, outputFile string, debug bool) error {
 	// Первый проход - построение таблицы символов
 	t.pass = 1
 	t.currentAddress = 0x0200 // Код начинается с 0x0200
@@ -71,7 +73,36 @@ func (t *Translator) Assemble(inputFile, outputFile string) error {
 	}
 
 	// Запись выходного файла
-	return t.writeOutput(outputFile)
+	if err := t.writeOutput(outputFile); err != nil {
+		return err
+	}
+
+	// Запись файла символов при включенном debug-режиме
+	if debug {
+		symFile := strings.TrimSuffix(outputFile, filepath.Ext(outputFile)) + ".sym"
+		if err := t.writeSymbols(symFile); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (t *Translator) writeSymbols(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create symbol file: %v", err)
+	}
+	defer file.Close()
+	
+	writer := bufio.NewWriter(file)
+	
+	// Записываем все символы из таблицы символов
+	for label, addr := range t.symbolTable {
+		fmt.Fprintf(writer, "0x%04X %s\n", addr, label)
+	}
+	
+	return writer.Flush()
 }
 
 // writeOutput записывает результат трансляции в выходной файл

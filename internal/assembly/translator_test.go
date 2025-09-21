@@ -3,6 +3,7 @@ package assembly
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -45,7 +46,7 @@ START:
 	}
 
 	translator := NewTranslator()
-	err = translator.Assemble(asmFile, binFile)
+	err = translator.Assemble(asmFile, binFile, false)
 	if err != nil {
 		t.Fatalf("Assemble failed: %v", err)
 	}
@@ -67,6 +68,53 @@ START:
 
 	if _, exists := translator.symbolTable["DATA"]; !exists {
 		t.Error("DATA label not found in symbol table")
+	}
+}
+
+
+func TestAssembleWithDebug(t *testing.T) {
+	// Создаем временный тестовый файл
+	testAsm := `
+ENTRY START
+SECTION .data
+DATA: DB 10, 20
+
+SECTION .code
+START:
+    MOV 0x10
+    JMP START
+`
+
+	tmpDir := t.TempDir()
+	asmFile := filepath.Join(tmpDir, "test.asm")
+	binFile := filepath.Join(tmpDir, "test.bin")
+
+	err := os.WriteFile(asmFile, []byte(testAsm), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	translator := NewTranslator()
+	err = translator.Assemble(asmFile, binFile, true) // Включаем debug режим
+	if err != nil {
+		t.Fatalf("Assemble failed: %v", err)
+	}
+
+	// Проверяем что файл символов был создан
+	symFile := strings.TrimSuffix(binFile, filepath.Ext(binFile)) + ".sym"
+	if _, err := os.Stat(symFile); err != nil {
+		t.Error("Symbol file was not created")
+	}
+
+	// Проверяем содержимое файла символов
+	content, err := os.ReadFile(symFile)
+	if err != nil {
+		t.Fatalf("Failed to read symbol file: %v", err)
+	}
+
+	expectedContent := "0x0100 DATA\n0x0200 START\n"
+	if string(content) != expectedContent {
+		t.Errorf("Symbol file content = %s, want %s", string(content), expectedContent)
 	}
 }
 
