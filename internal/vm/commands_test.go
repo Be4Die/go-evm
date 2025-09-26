@@ -734,3 +734,319 @@ func TestAddIntCommandWithOverflow(t *testing.T) {
         t.Error("Overflow flag should not be set")
     }
 }
+
+func TestSetdAndClrdCommands(t *testing.T) {
+	mem := NewMemory(1024)
+	cpu := NewCPU(mem)
+
+	// Test SETD command
+	cpu.psw.SetIP(0x100)
+	mem.WriteByteAt(0x100, OP_SETD)
+	mem.WriteByteAt(0x101, 0x00)
+	mem.WriteByteAt(0x102, 0x00)
+
+	err := cpu.Step()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !cpu.psw.GetFlag(FLAG_DESTINATION) {
+		t.Error("SETD command failed: DESTINATION flag not set")
+	}
+
+	// Test CLRD command
+	cpu.psw.SetIP(0x110)
+	mem.WriteByteAt(0x110, OP_CLRD)
+	mem.WriteByteAt(0x111, 0x00)
+	mem.WriteByteAt(0x112, 0x00)
+
+	err = cpu.Step()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if cpu.psw.GetFlag(FLAG_DESTINATION) {
+		t.Error("CLRD command failed: DESTINATION flag not cleared")
+	}
+}
+
+func TestAddIntWithDestinationFlag(t *testing.T) {
+	mem := NewMemory(1024)
+	cpu := NewCPU(mem)
+	cpu.psw.SetSP(31)
+
+	// Test with DESTINATION flag set (result in memory)
+	cpu.psw.SetFlag(FLAG_DESTINATION, true)
+	mem.WriteWordAt(0x200, 10)
+	cpu.push(5)
+	cpu.psw.SetIP(0x100)
+	mem.WriteByteAt(0x100, OP_ADD_I)
+	mem.WriteByteAt(0x101, 0x00)
+	mem.WriteByteAt(0x102, 0x02)
+
+	err := cpu.Step()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check result in memory
+	result, err := mem.ReadWordAt(0x200)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != 15 {
+		t.Errorf("Expected 15 in memory, got %d", result)
+	}
+
+	// Test with DESTINATION flag cleared (result in stack)
+	cpu.psw.SetFlag(FLAG_DESTINATION, false)
+	mem.WriteWordAt(0x200, 20)
+	cpu.push(10)
+	cpu.psw.SetIP(0x110)
+	mem.WriteByteAt(0x110, OP_ADD_I)
+	mem.WriteByteAt(0x111, 0x00)
+	mem.WriteByteAt(0x112, 0x02)
+
+	err = cpu.Step()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check result in stack
+	result, err = cpu.pop()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != 30 {
+		t.Errorf("Expected 30 in stack, got %d", result)
+	}
+}
+
+func TestArithmeticCommandsWithDestinationFlag(t *testing.T) {
+	mem := NewMemory(1024)
+	cpu := NewCPU(mem)
+	cpu.psw.SetSP(31)
+
+	commands := []struct {
+		opcode byte
+		name   string
+		a      uint32
+		b      uint32
+		result uint32
+	}{
+		{OP_SUB_I, "SUB_I", 10, 5, 5},
+		{OP_MUL_I, "MUL_I", 5, 4, 20},
+		{OP_DIV_I, "DIV_I", 20, 5, 4},
+		{OP_ADD_F, "ADD_F", Float32ToUint32(2.5), Float32ToUint32(1.5), Float32ToUint32(4.0)},
+		{OP_SUB_F, "SUB_F", Float32ToUint32(5.0), Float32ToUint32(2.5), Float32ToUint32(2.5)},
+		{OP_MUL_F, "MUL_F", Float32ToUint32(2.5), Float32ToUint32(4.0), Float32ToUint32(10.0)},
+		{OP_DIV_F, "DIV_F", Float32ToUint32(10.0), Float32ToUint32(2.5), Float32ToUint32(4.0)},
+	}
+
+	for _, cmd := range commands {
+		t.Run(cmd.name+"_MemoryDestination", func(t *testing.T) {
+			cpu.psw.SetFlag(FLAG_DESTINATION, true)
+			mem.WriteWordAt(0x200, cmd.b)
+			cpu.push(cmd.a)
+			cpu.psw.SetIP(0x100)
+			mem.WriteByteAt(0x100, cmd.opcode)
+			mem.WriteByteAt(0x101, 0x00)
+			mem.WriteByteAt(0x102, 0x02)
+
+			err := cpu.Step()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := mem.ReadWordAt(0x200)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result != cmd.result {
+				t.Errorf("%s: expected %d, got %d", cmd.name, cmd.result, result)
+			}
+		})
+
+		t.Run(cmd.name+"_StackDestination", func(t *testing.T) {
+			cpu.psw.SetFlag(FLAG_DESTINATION, false)
+			mem.WriteWordAt(0x200, cmd.b)
+			cpu.push(cmd.a)
+			cpu.psw.SetIP(0x110)
+			mem.WriteByteAt(0x110, cmd.opcode)
+			mem.WriteByteAt(0x111, 0x00)
+			mem.WriteByteAt(0x112, 0x02)
+
+			err := cpu.Step()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := cpu.pop()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result != cmd.result {
+				t.Errorf("%s: expected %d, got %d", cmd.name, cmd.result, result)
+			}
+		})
+	}
+}
+
+func TestLogicalCommandsWithDestinationFlag(t *testing.T) {
+	mem := NewMemory(1024)
+	cpu := NewCPU(mem)
+	cpu.psw.SetSP(31)
+
+	commands := []struct {
+		opcode byte
+		name   string
+		a      uint32
+		b      uint32
+		result uint32
+	}{
+		{OP_AND, "AND", 0x00FF00FF, 0x0F0F0F0F, 0x000F000F},
+		{OP_OR, "OR", 0x00FF00FF, 0x0F0F0F0F, 0x0FFF0FFF},
+		{OP_XOR, "XOR", 0x00FF00FF, 0x0F0F0F0F, 0x0FF00FF0},
+		{OP_SHL, "SHL", 0x0000000F, 4, 0x000000F0},
+		{OP_SHR, "SHR", 0xF0000000, 4, 0x0F000000},
+	}
+
+	for _, cmd := range commands {
+		t.Run(cmd.name+"_MemoryDestination", func(t *testing.T) {
+			cpu.psw.SetFlag(FLAG_DESTINATION, true)
+			mem.WriteWordAt(0x200, cmd.b)
+			cpu.push(cmd.a)
+			cpu.psw.SetIP(0x100)
+			mem.WriteByteAt(0x100, cmd.opcode)
+			mem.WriteByteAt(0x101, 0x00)
+			mem.WriteByteAt(0x102, 0x02)
+
+			err := cpu.Step()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := mem.ReadWordAt(0x200)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result != cmd.result {
+				t.Errorf("%s: expected %08X, got %08X", cmd.name, cmd.result, result)
+			}
+		})
+
+		t.Run(cmd.name+"_StackDestination", func(t *testing.T) {
+			cpu.psw.SetFlag(FLAG_DESTINATION, false)
+			mem.WriteWordAt(0x200, cmd.b)
+			cpu.push(cmd.a)
+			cpu.psw.SetIP(0x110)
+			mem.WriteByteAt(0x110, cmd.opcode)
+			mem.WriteByteAt(0x111, 0x00)
+			mem.WriteByteAt(0x112, 0x02)
+
+			err := cpu.Step()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := cpu.pop()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result != cmd.result {
+				t.Errorf("%s: expected %08X, got %08X", cmd.name, cmd.result, result)
+			}
+		})
+	}
+}
+
+func TestNotCommandWithDestinationFlag(t *testing.T) {
+	mem := NewMemory(1024)
+	cpu := NewCPU(mem)
+	cpu.psw.SetSP(31)
+
+	// NOT command always uses stack for result (as per current implementation)
+	// Test both flag states to verify behavior
+	cpu.push(0xFFFF0000)
+	cpu.psw.SetFlag(FLAG_DESTINATION, true)
+	cpu.psw.SetIP(0x100)
+	mem.WriteByteAt(0x100, OP_NOT)
+	mem.WriteByteAt(0x101, 0x00)
+	mem.WriteByteAt(0x102, 0x00)
+
+	err := cpu.Step()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := cpu.pop()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != 0x0000FFFF {
+		t.Errorf("NOT with DESTINATION=true: expected 0x0000FFFF, got 0x%08X", result)
+	}
+
+	cpu.push(0x00FF00FF)
+	cpu.psw.SetFlag(FLAG_DESTINATION, false)
+	cpu.psw.SetIP(0x110)
+	mem.WriteByteAt(0x110, OP_NOT)
+	mem.WriteByteAt(0x111, 0x00)
+	mem.WriteByteAt(0x112, 0x00)
+
+	err = cpu.Step()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err = cpu.pop()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != 0xFF00FF00 {
+		t.Errorf("NOT with DESTINATION=false: expected 0xFF00FF00, got 0x%08X", result)
+	}
+}
+
+func TestComparisonCommandsIgnoreDestinationFlag(t *testing.T) {
+	mem := NewMemory(1024)
+	cpu := NewCPU(mem)
+	cpu.psw.SetSP(31)
+
+	commands := []struct {
+		opcode byte
+		name   string
+	}{
+		{OP_CMP_I, "CMP_I"},
+		{OP_CMP_F, "CMP_F"},
+	}
+
+	for _, cmd := range commands {
+		t.Run(cmd.name, func(t *testing.T) {
+			// Test with DESTINATION flag set
+			cpu.psw.SetFlag(FLAG_DESTINATION, true)
+			if cmd.name == "CMP_I" {
+				mem.WriteWordAt(0x200, 5)
+				cpu.push(5)
+			} else {
+				mem.WriteWordAt(0x200, Float32ToUint32(2.5))
+				cpu.push(Float32ToUint32(2.5))
+			}
+			
+			cpu.psw.SetIP(0x100)
+			mem.WriteByteAt(0x100, cmd.opcode)
+			mem.WriteByteAt(0x101, 0x00)
+			mem.WriteByteAt(0x102, 0x02)
+
+			err := cpu.Step()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Verify SP is restored (comparison shouldn't leave result)
+			if cpu.psw.GetSP() != 31 {
+				t.Errorf("%s: SP not restored properly, got %d", cmd.name, cpu.psw.GetSP())
+			}
+		})
+	}
+}

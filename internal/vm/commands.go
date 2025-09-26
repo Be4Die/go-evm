@@ -61,6 +61,32 @@ func (c *CPU) readImmediateOffset() (uint16, error) {
 
 // Реализации команд процессора
 
+// setdCommand реализует команду установки флага направления (OP_SETD).
+// Устанавливает флаг DESTINATION в true (результат в память).
+func (c *CPU) setdCommand() error {
+    // Прочитать и игнорировать непосредственное смещение (2 байта)
+    _, err := c.readImmediateOffset()
+    if err != nil {
+        return err
+    }
+    
+    c.psw.SetFlag(FLAG_DESTINATION, true)
+    return nil
+}
+
+// clrdCommand реализует команду сброса флага направления (OP_CLRD).
+// Устанавливает флаг DESTINATION в false (результат в стек).
+func (c *CPU) clrdCommand() error {
+    // Прочитать и игнорировать непосредственное смещение (2 байта)
+    _, err := c.readImmediateOffset()
+    if err != nil {
+        return err
+    }
+    
+    c.psw.SetFlag(FLAG_DESTINATION, false)
+    return nil
+}
+
 // movCommand реализует команду перемещения данных (OP_MOV).
 // Перемещает значение с вершины стека в память по указанному смещению.
 func (c *CPU) movCommand() error {
@@ -118,8 +144,14 @@ func (c *CPU) addIntCommand() error {
 	carry := (stackValue > math.MaxUint32-memValue)
 	c.psw.SetFlag(FLAG_CARRY, carry)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // subIntCommand реализует команду целочисленного вычитания (OP_SUB_I).
@@ -161,8 +193,14 @@ func (c *CPU) subIntCommand() error {
 	carry := stackValue >= memValue
 	c.psw.SetFlag(FLAG_CARRY, carry)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // mulIntCommand реализует команду целочисленного умножения (OP_MUL_I).
@@ -200,8 +238,14 @@ func (c *CPU) mulIntCommand() error {
 		c.psw.SetFlag(FLAG_OVERFLOW, false)
 	}
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // divIntCommand реализует команду целочисленного деления (OP_DIV_I).
@@ -237,8 +281,14 @@ func (c *CPU) divIntCommand() error {
 	c.psw.SetFlag(FLAG_ZERO, result == 0)
 	c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // addFloatCommand реализует команду сложения чисел с плавающей точкой (OP_ADD_F).
@@ -274,8 +324,14 @@ func (c *CPU) addFloatCommand() error {
 	c.psw.SetFlag(FLAG_FZERO, resultFloat == 0)
 	c.psw.SetFlag(FLAG_FNEGATIVE, resultFloat < 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // subFloatCommand реализует команду вычитания чисел с плавающей точкой (OP_SUB_F).
@@ -311,8 +367,14 @@ func (c *CPU) subFloatCommand() error {
 	c.psw.SetFlag(FLAG_FZERO, resultFloat == 0)
 	c.psw.SetFlag(FLAG_FNEGATIVE, resultFloat < 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // mulFloatCommand реализует команду умножения чисел с плавающей точкой (OP_MUL_F).
@@ -348,8 +410,14 @@ func (c *CPU) mulFloatCommand() error {
 	c.psw.SetFlag(FLAG_FZERO, resultFloat == 0)
 	c.psw.SetFlag(FLAG_FNEGATIVE, resultFloat < 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // divFloatCommand реализует команду деления чисел с плавающей точкой (OP_DIV_F).
@@ -390,8 +458,14 @@ func (c *CPU) divFloatCommand() error {
 	c.psw.SetFlag(FLAG_FZERO, resultFloat == 0)
 	c.psw.SetFlag(FLAG_FNEGATIVE, resultFloat < 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // cmpIntCommand реализует команду целочисленного сравнения (OP_CMP_I).
@@ -690,8 +764,14 @@ func (c *CPU) andCommand() error {
 	c.psw.SetFlag(FLAG_ZERO, result == 0)
 	c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // orCommand реализует команду логического ИЛИ (OP_OR).
@@ -722,8 +802,14 @@ func (c *CPU) orCommand() error {
 	c.psw.SetFlag(FLAG_ZERO, result == 0)
 	c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // xorCommand реализует команду исключающего ИЛИ (OP_XOR).
@@ -754,8 +840,14 @@ func (c *CPU) xorCommand() error {
 	c.psw.SetFlag(FLAG_ZERO, result == 0)
 	c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // notCommand реализует команду логического НЕ (OP_NOT).
@@ -775,8 +867,14 @@ func (c *CPU) notCommand() error {
     c.psw.SetFlag(FLAG_ZERO, result == 0)
     c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
 
-    // Поместить результат обратно в стек
-    return c.push(result)
+    // Разместить результат в зависимости от флага направления
+    if c.psw.GetFlag(FLAG_DESTINATION) {
+        // Для команды NOT нет явного адреса памяти, поэтому используем стек
+        return c.push(result)
+    } else {
+        // Результат в стек
+        return c.push(result)
+    }
 }
 
 // shlCommand реализует команду логического сдвига влево (OP_SHL).
@@ -808,8 +906,14 @@ func (c *CPU) shlCommand() error {
 	c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
 	c.psw.SetFlag(FLAG_CARRY, (stackValue>>(32-(shiftCount&0x1F))&1) != 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }
 
 // shrCommand реализует команду логического сдвига вправо (OP_SHR).
@@ -841,6 +945,12 @@ func (c *CPU) shrCommand() error {
 	c.psw.SetFlag(FLAG_NEGATIVE, (result&0x80000000) != 0)
 	c.psw.SetFlag(FLAG_CARRY, (stackValue>>((shiftCount&0x1F)-1)&1) != 0)
 
-	// Поместить результат обратно в стек
-	return c.push(result)
+	// Разместить результат в зависимости от флага направления
+	if c.psw.GetFlag(FLAG_DESTINATION) {
+		// Результат в память
+		return c.memory.WriteWordAt(offset, result)
+	} else {
+		// Результат в стек
+		return c.push(result)
+	}
 }

@@ -100,4 +100,6 @@ func (c *CPU) initCommands() {
 	c.commands[OP_NOT] = c.notCommand
 	c.commands[OP_SHL] = c.shlCommand
 	c.commands[OP_SHR] = c.shrCommand
+	c.commands[OP_SETD] = c.setdCommand
+	c.commands[OP_CLRD] = c.clrdCommand
 }
